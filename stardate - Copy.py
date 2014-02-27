@@ -87,8 +87,6 @@ class Stardate():
             date = time.strftime("%d %m %Y %H %M %S")
         d, m, y, H, M, S = [ int(item) for item in date.split() ]
         S = int(time.time())
-
-        print "S: ", str(S)
         
         isneg = True
         nissue, integer, frac = 0, 0, 0
@@ -100,7 +98,6 @@ class Stardate():
             print "negative"
             # negative stardate
             diff = ufpepoch - S
-            print str(diff)
             #? diff -= 1
             nsecs = 2000*86400 - 1 - (diff % (2000 * 86400))
             isneg = True
@@ -138,7 +135,6 @@ class Stardate():
 
         ret = "[" + ("-" if isneg else "")  + str(nissue) + "]" + str(integer) 
         frac = ( ( ((frac * 125) / 108) >> 32 ) & 0xffffffff ) # round
-        ret += "." + str(frac)
         return ret
 
     def toTngStardate(self, date=None):
