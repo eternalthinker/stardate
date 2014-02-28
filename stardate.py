@@ -144,6 +144,15 @@ class Stardate():
     def toTngStardate(self, date=None):
         return "TNG stardate"   
 
+    def getcurdate(self):
+        pass
+
+    def gregin(self):
+        pass
+
+    def readcal(pass):
+        pass
+
     def fromStardate(self, stardate):
         nineteen = [0, 19];
         twenty = [0, 20];        
