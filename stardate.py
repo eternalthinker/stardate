@@ -145,40 +145,47 @@ class Stardate():
         return "TNG stardate"   
 
     def getcurdate(self):
-        pass
+        time_t t = time(NULL);
+        struct tm *tm = gmtime(&t);
+        char utc[20];
+        sprintf(utc, "%04d-%02d-%02dT%02d:%02d:%02d", tm->tm_year+1900, tm->tm_mon+1,
+          tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
+        gregin(utc, dt);
 
-    def gregin(self):
-        struct caldate c;
-        uint64 t;
-        uint1 low;
-        uint16 cycle;
-        
+        t = int(time.time())
+        utc = 0 # convert properly
+        gregin(utc)
+
+    def gregin(self, date=None):        
         d, m, y, H, M, S = 0, 0, 0, 0, 0, 0
+
         cycle = uint64mod(c.year, 400UL);
-        if(c.day > xdays(gregp, cycle)[c.month - 1]) {
-        fprintf(stderr, "%s: day is out of range: %s\n", progname, date);
-        return 2;
-        }
-        if(low = (gregp && uint64iszero(c.year)))
-        c.year = uint64mk(0, 399UL);
-        else
-        c.year = uint64dec(c.year);
-        t = uint64mul(c.year, 365UL);
-        if(gregp) {
-        t = uint64sub(t, uint64div(c.year, 100UL));
-        t = uint64add(t, uint64div(c.year, 400UL));
-        }
-        t = uint64add(t, uint64div(c.year, 4UL));
-        n = 2*(uint16)gregp + c.day - 1;
-        for(c.month--; c.month--; )
-        n += xdays(gregp, cycle)[c.month];
-        t = uint64add(t, uint64mk(0, n));
-        if(low)
-        t = uint64sub(t, uint64mk(0, 146097UL));
-        t = uint64mul(t, 86400UL);
-        dt->sec = uint64add(t, uint64mk(0, c.hour*3600UL + c.min*60UL + c.sec));
-        dt->frac = 0;
-        return 1;
+        cycle = y % 400
+        
+        low = (y == 0)
+        if low:
+            y = 399
+        else:
+            y = y - 1 # ? uint64dec(c.year)
+        
+        t = y * 365
+        t = t - y/100
+        t = t + y/400
+        t = t + y/4
+
+        n = 2 + d - 1
+        m -= 1
+        while m > 0:            
+            n += xdays(True, cycle)[m]
+            m -= 1
+
+        t = t + n
+        if low:
+            t = t - 146097
+        t = t * 86400
+
+        oS = t + H*3600 + M*60 + S
+
 
     def fromStardate(self, stardate):
         nineteen = [0, 19];
