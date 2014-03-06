@@ -145,21 +145,24 @@ class Stardate():
         return "TNG stardate"   
 
     def getcurdate(self):
-        time_t t = time(NULL);
-        struct tm *tm = gmtime(&t);
-        char utc[20];
-        sprintf(utc, "%04d-%02d-%02dT%02d:%02d:%02d", tm->tm_year+1900, tm->tm_mon+1,
-          tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
-        gregin(utc, dt);
+        # time_t t = time(NULL);
+        # struct tm *tm = gmtime(&t);
+        # char utc[20];
+        # sprintf(utc, "%04d-%02d-%02dT%02d:%02d:%02d", tm->tm_year+1900, tm->tm_mon+1,
+        #   tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
+        # gregin(utc, dt);
 
-        t = int(time.time())
-        utc = 0 # convert properly
-        gregin(utc)
+        # t = int(time.time())
+        date = time.strftime("%d %m %Y %H %M %S")
+        utc = [ int(item) for item in date.split() ]
+        print utc
+        secs = gregin(utc)
+        print secs
 
     def gregin(self, date=None):        
-        d, m, y, H, M, S = 0, 0, 0, 0, 0, 0
+        d, m, y, H, M, S = date
 
-        cycle = uint64mod(c.year, 400UL);
+        # cycle = uint64mod(c.year, 400UL);
         cycle = y % 400
         
         low = (y == 0)
@@ -185,6 +188,8 @@ class Stardate():
         t = t * 86400
 
         oS = t + H*3600 + M*60 + S
+
+        return oS
 
 
     def fromStardate(self, stardate):
