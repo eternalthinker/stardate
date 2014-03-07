@@ -63,13 +63,13 @@ class Stardate():
         return (not y % 4) and (y % 100 or not y % 400)
 
     def jdays(self, y):
-        return lyrdays if jleapyear(y) else nrmdays
+        return self.lyrdays if self.jleapyear(y) else self.nrmdays
 
     def gdays(self, y):
-        return lyrdays if gleapyear(y) else nrmdays
+        return self.lyrdays if self.gleapyear(y) else self.nrmdays
 
     def xdays(self, gp, y):
-        return lyrdays if (gleapyear(y) if gp else jleapyear(y)) else nrmdays
+        return self.lyrdays if (self.gleapyear(y) if gp else self.jleapyear(y)) else self.nrmdays
 
     #define jleapyear(y) ( !((y)%4L) )
     #define gleapyear(y) ( !((y)%4L) && ( ((y)%100L) || !((y)%400L) ) )
@@ -83,24 +83,21 @@ class Stardate():
         pass
 
     def toStardate(self, date=None):
-        if not date:
-            date = time.strftime("%d %m %Y %H %M %S")
-        d, m, y, H, M, S = [ int(item) for item in date.split() ]
-        S = int(time.time())
-
-        print "S: ", str(S)
+        # if not date:
+        #     date = time.strftime("%d %m %Y %H %M %S")
+        # d, m, y, H, M, S = [ int(item) for item in date.split() ]
+        # S = int(time.time())
+        S = self.getcurdate()
         
         isneg = True
         nissue, integer, frac = 0, 0, 0
 
         if S > tngepoch:
-            return toTngStardate(date)
+            return self.toTngStardate(date)
 
-        if S < ufpepoch: 
-            print "negative"
+        if S < ufpepoch:             
             # negative stardate
-            diff = ufpepoch - S
-            print str(diff)
+            diff = ufpepoch - S            
             #? diff -= 1
             nsecs = 2000*86400 - 1 - (diff % (2000 * 86400))
             isneg = True
@@ -153,11 +150,15 @@ class Stardate():
         # gregin(utc, dt);
 
         # t = int(time.time())
-        date = time.strftime("%d %m %Y %H %M %S")
+        #date = time.strftime("%d %m %Y %H %M %S")
+        # use UTC time for now
+        import datetime
+        date = datetime.datetime.utcnow().strftime("%d %m %Y %H %M %S")
         utc = [ int(item) for item in date.split() ]
-        print utc
-        secs = gregin(utc)
-        print secs
+        print "utc array:", utc
+        secs = self.gregin(utc)
+        return secs
+        #print secs
 
     def gregin(self, date=None):        
         d, m, y, H, M, S = date
@@ -179,7 +180,7 @@ class Stardate():
         n = 2 + d - 1
         m -= 1
         while m > 0:            
-            n += xdays(True, cycle)[m]
+            n += self.xdays(True, cycle)[m]
             m -= 1
 
         t = t + n
