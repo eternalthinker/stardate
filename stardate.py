@@ -133,7 +133,7 @@ class Stardate():
                     integer = 7340 + nsecs / (86400*10)
                     frac = ( ((nsecs % (86400*10)) << 32) & S )
 
-        ret = "[" + ("-" if isneg else "")  + str(nissue) + "]" + str(integer) 
+        ret = "[" + ("-" if isneg else "")  + str(nissue) + "]" + str(integer).zfill(4) 
         frac = ( ( ((frac * 125) / 108) >> 32 ) & 0xffffffff ) # round
         ret += "." + str(frac)
         return ret
