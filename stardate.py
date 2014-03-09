@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 #
 # Author: Rahul Anand <et@eternal-thinker.com>
-#         2014-02-21, stardate[-28]( <date> 6.00 pm 30 secs)            
+#         2014-02-21, stardate[-28]( <date> 6.00 pm 30 secs)
 #
-# Description: 
+# Description:
 #   Convert date formats to Stardates
-#   Uses Stardate versions in Star Trek FAQ, as adopted by Google Calender 
+#   Uses Stardate versions in Star Trek FAQ, as adopted by Google Calender
 #
 # Python version: 2.7
 #####################################################################################
@@ -24,7 +24,7 @@ import time
 # /* The date 0323-01-01 (0323*01*01) is 117609 days after the internal   *
 # * epoch, 0001=01=01 (0000-12-30).  This is a difference of             *
 # * 117609*86400 (0x1cb69*0x15180) == 10161417600 (0x25daaed80) seconds. */
-qcepoch = 0x25daaed80    
+qcepoch = 0x25daaed80
 
 # /* The length of four centuries, 146097 days of 86400 seconds, is *
 # * 12622780800 (0x2f0605980) seconds.                             */
@@ -48,7 +48,7 @@ tngepoch = 0x110f8cad00
 
 class Stardate():
 
-    # The length of one quadcent year, 12622780800 / 400 == 31556952 seconds. 
+    # The length of one quadcent year, 12622780800 / 400 == 31556952 seconds.
     QCYEAR = 31556952
     STDYEAR = 31536000
 
@@ -77,44 +77,43 @@ class Stardate():
     #define gdays(y) (gleapyear(y) ? lyrdays : nrmdays)
     #define xdays(gp, y) ( ((gp) ? gleapyear(y) : jleapyear(y))    ? lyrdays : nrmdays)
 
-    
+
 
     def __init__(self):
         pass
 
     def toStardate(self, date=None):
-        # if not date:
-        #     date = time.strftime("%d %m %Y %H %M %S")
-        # d, m, y, H, M, S = [ int(item) for item in date.split() ]
-        # S = int(time.time())
-        S = self.getcurdate()
-        
+        S = 0
+        F = 0
+        if not date:
+            S = self.getcurdate()
+
         isneg = True
         nissue, integer, frac = 0, 0, 0
 
         if S > tngepoch:
             return self.toTngStardate(date)
 
-        if S < ufpepoch:             
+        if S < ufpepoch:
             # negative stardate
-            diff = ufpepoch - S            
+            diff = ufpepoch - S
             #? diff -= 1
             nsecs = 2000*86400 - 1 - (diff % (2000 * 86400))
             isneg = True
             nissue = 1 + ((diff / (2000 * 86400)) & 0xffffffff)
             integer = nsecs / (86400/5)
-            frac = ( ((nsecs % (86400/5)) << 32) & S ) * 50
-        elif S < tngepoch: 
+            frac = ( ((nsecs % (86400/5)) << 32) | F ) * 50
+        elif S < tngepoch:
             # positive stardate
             diff = S - ufpepoch
             nsecs = diff % (2000 * 86400)
             isneg = False
             nissue = (diff / (2000 * 86400)) & 0xffffffff
 
-            if nissue < 19 or ( nissue == 19 and nsecs < (7340*(86400/5)) ) : 
+            if nissue < 19 or ( nissue == 19 and nsecs < (7340*(86400/5)) ) :
                 # TOS era
                 integer = nsecs / (86400/5)
-                frac = ( ((nsecs % (86400/5)) << 32) & S ) * 50
+                frac = ( ((nsecs % (86400/5)) << 32) | F ) * 50
             else:
                 # film era
                 nsecs += (nissue - 19) * 2000 * 86400
@@ -127,51 +126,44 @@ class Stardate():
                     if integer >= 10000:
                         integer -= 10000
                         nissue += 1
-                    frac = ( ((nsecs % (86400*2)) << 32) & S ) * 5
+                    frac = ( ((nsecs % (86400*2)) << 32) | F ) * 5
                 else:
                     # early film era
                     integer = 7340 + nsecs / (86400*10)
-                    frac = ( ((nsecs % (86400*10)) << 32) & S )
+                    frac = ( ((nsecs % (86400*10)) << 32) | F )
 
-        ret = "[" + ("-" if isneg else "")  + str(nissue) + "]" + str(integer).zfill(4) 
+        ret = "[" + ("-" if isneg else "")  + str(nissue) + "]" + str(integer).zfill(4)
         frac = ( ( ((frac * 125) / 108) >> 32 ) & 0xffffffff ) # round
         ret += "." + str(frac)
         return ret
 
     def toTngStardate(self, date=None):
-        return "TNG stardate"   
+        return "TNG stardate"
 
     def getcurdate(self):
-        # time_t t = time(NULL);
-        # struct tm *tm = gmtime(&t);
-        # char utc[20];
-        # sprintf(utc, "%04d-%02d-%02dT%02d:%02d:%02d", tm->tm_year+1900, tm->tm_mon+1,
-        #   tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
-        # gregin(utc, dt);
-
         # t = int(time.time())
-        #date = time.strftime("%d %m %Y %H %M %S")
+        # date = time.strftime("%Y %m %d %H %M %S")
         # use UTC time for now
         import datetime
-        date = datetime.datetime.utcnow().strftime("%d %m %Y %H %M %S")
+        date = datetime.datetime.utcnow().strftime("%Y %m %d %H %M %S")
         utc = [ int(item) for item in date.split() ]
         print "utc array:", utc
         secs = self.gregin(utc)
         return secs
         #print secs
 
-    def gregin(self, date=None):        
-        d, m, y, H, M, S = date
+    def gregin(self, date=None):
+        y, m, d, H, M, S = date
 
         # cycle = uint64mod(c.year, 400UL);
         cycle = y % 400
-        
+
         low = (y == 0)
         if low:
             y = 399
         else:
             y = y - 1 # ? uint64dec(c.year)
-        
+
         t = y * 365
         t = t - y/100
         t = t + y/400
@@ -179,7 +171,7 @@ class Stardate():
 
         n = 2 + d - 1
         m -= 1
-        while m > 0:            
+        while m > 0:
             n += self.xdays(True, cycle)[m]
             m -= 1
 
@@ -195,9 +187,9 @@ class Stardate():
 
     def fromStardate(self, stardate):
         nineteen = [0, 19];
-        twenty = [0, 20];        
-       
+        twenty = [0, 20];
 
-if __name__ == "__main__":    
+
+if __name__ == "__main__":
     sd = Stardate()
-    print "Current stardate is: %s" % sd.toStardate()
+    print "%s" % sd.toStardate()

@@ -149,7 +149,7 @@ static struct format {
   { 0, 0, NULL, NULL }
 };
 
-static uint16 sddigits = 2;
+static uint16 sddigits = 6;
 
 static char const *progname;
 
