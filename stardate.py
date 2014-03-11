@@ -16,6 +16,8 @@
 # by Andrew Main <zefram@fysh.org>
 # 1997-12-26, stardate [-30]0458.96
 #
+# Copyright (c) 1996, 1997 Andrew Main.  All rights reserved.
+#
 # Stardate code is based on version 1 of the Stardates in Star Trek FAQ.
 #####################################################################################
 
@@ -52,7 +54,7 @@ class Stardate():
     QCYEAR = 31556952
     STDYEAR = 31536000
 
-    # Definitions to help with leap years. */
+    # Definitions to help with leap years.
     nrmdays = [ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 ]
     lyrdays = [ 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 ]
 
@@ -71,14 +73,6 @@ class Stardate():
     def xdays(self, gp, y):
         return self.lyrdays if (self.gleapyear(y) if gp else self.jleapyear(y)) else self.nrmdays
 
-    #define jleapyear(y) ( !((y)%4L) )
-    #define gleapyear(y) ( !((y)%4L) && ( ((y)%100L) || !((y)%400L) ) )
-    #define jdays(y) (jleapyear(y) ? lyrdays : nrmdays)
-    #define gdays(y) (gleapyear(y) ? lyrdays : nrmdays)
-    #define xdays(gp, y) ( ((gp) ? gleapyear(y) : jleapyear(y))    ? lyrdays : nrmdays)
-
-
-
     def __init__(self):
         pass
 
@@ -86,7 +80,8 @@ class Stardate():
         S = 0
         F = 0
         if not date:
-            S = self.getcurdate()
+            date = self.getcurdate()
+        S = self.gregin(date)
 
         isneg = True
         nissue, integer, frac = 0, 0, 0
@@ -97,7 +92,6 @@ class Stardate():
         if S < ufpepoch:
             # negative stardate
             diff = ufpepoch - S
-            #? diff -= 1
             nsecs = 2000*86400 - 1 - (diff % (2000 * 86400))
             isneg = True
             nissue = 1 + ((diff / (2000 * 86400)) & 0xffffffff)
@@ -138,11 +132,6 @@ class Stardate():
         return ret
 
     def toTngStardate(self, S = 0, F =0):
-        static char ret[UINT64_DIGITS + 15];
-        uint64 h, l;
-        uint32 nsecs;
-        uint64 diff = uint64sub(dt->sec, tngepoch);
-
         diff = S - tngepoch
         # 1 issue is 86400*146097/4 seconds long, which just fits in 32 bits. 
         nissue = 21 + diff/((86400/4)*146097)
@@ -158,29 +147,24 @@ class Stardate():
         ret += ".%06d" % (h % 1000000)        
         return ret;        
 
-    def getcurdate(self):
-        # t = int(time.time())
-        # date = time.strftime("%Y %m %d %H %M %S")
-        # use UTC time for now
+    def getcurdate(self):        
         import datetime
+        # use UTC time for now        
         date = datetime.datetime.utcnow().strftime("%Y %m %d %H %M %S")
         utc = [ int(item) for item in date.split() ]
         print "utc array:", utc
-        secs = self.gregin(utc)
-        return secs
-        #print secs
+        return utc       
 
     def gregin(self, date=None):
         y, m, d, H, M, S = date
 
-        # cycle = uint64mod(c.year, 400UL);
         cycle = y % 400
 
         low = (y == 0)
         if low:
             y = 399
         else:
-            y = y - 1 # ? uint64dec(c.year)
+            y = y - 1
 
         t = y * 365
         t = t - y/100
@@ -198,9 +182,9 @@ class Stardate():
             t = t - 146097
         t = t * 86400
 
-        oS = t + H*3600 + M*60 + S
+        retS = t + H*3600 + M*60 + S
 
-        return oS
+        return retS
 
 
     def fromStardate(self, stardate):
@@ -210,4 +194,6 @@ class Stardate():
 
 if __name__ == "__main__":
     sd = Stardate()
-    print "%s" % sd.toStardate()
+    date = [2162, 1, 4, 0, 0, 0] #ufepoch
+    date = [2323, 1, 1, 0, 0, 0] #tngepoch
+    print "%s" % sd.toStardate(date)
