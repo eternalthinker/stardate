@@ -23,29 +23,29 @@
 
 import time
 
-# The date 0323-01-01 (0323*01*01) is 117609 days after the internal   
-# epoch, 0001=01=01 (0000-12-30).  This is a difference of             
-# 117609*86400 (0x1cb69*0x15180) == 10161417600 (0x25daaed80) seconds. 
+# The date 0323-01-01 (0323*01*01) is 117609 days after the internal
+# epoch, 0001=01=01 (0000-12-30).  This is a difference of
+# 117609*86400 (0x1cb69*0x15180) == 10161417600 (0x25daaed80) seconds.
 qcepoch = 0x25daaed80
 
-# The length of four centuries, 146097 days of 86400 seconds, is 
-# 12622780800 (0x2f0605980) seconds.                             
+# The length of four centuries, 146097 days of 86400 seconds, is
+# 12622780800 (0x2f0605980) seconds.
 quadcent = 0x2f0605980
 
-# The epoch for Unix time, 1970-01-01, is 719164 (0xaf93c) days after 
-# our internal epoch, 0001=01=01 (0000-12-30).  This is a difference  
-# of 719164*86400 (0xaf93c*0x15180) == 62135769600 (0xe77949a00)      
-# seconds.                                                            
+# The epoch for Unix time, 1970-01-01, is 719164 (0xaf93c) days after
+# our internal epoch, 0001=01=01 (0000-12-30).  This is a difference
+# of 719164*86400 (0xaf93c*0x15180) == 62135769600 (0xe77949a00)
+# seconds.
 unixepoch = 0xe77949a00
 
-# The epoch for stardates, 2162-01-04, is 789294 (0xc0b2e) days after 
-# the internal epoch.  This is 789294*86400 (0xc0b2e*0x15180) ==      
-# 68195001600 (0xfe0bd2500) seconds.                                  
+# The epoch for stardates, 2162-01-04, is 789294 (0xc0b2e) days after
+# the internal epoch.  This is 789294*86400 (0xc0b2e*0x15180) ==
+# 68195001600 (0xfe0bd2500) seconds.
 ufpepoch = 0xfe0bd2500
 
-# The epoch for TNG-style stardates, 2323-01-01, is 848094 (0xcf0de) 
-# days after the internal epoch.  This is 73275321600 (0x110f8cad00) 
-# seconds.                                                           
+# The epoch for TNG-style stardates, 2323-01-01, is 848094 (0xcf0de)
+# days after the internal epoch.  This is 73275321600 (0x110f8cad00)
+# seconds.
 tngepoch = 0x110f8cad00
 
 class Stardate():
@@ -86,7 +86,7 @@ class Stardate():
         isneg = True
         nissue, integer, frac = 0, 0, 0
 
-        if S > tngepoch:
+        if S >= tngepoch:
             return self.toTngStardate(S, F)
 
         if S < ufpepoch:
@@ -133,27 +133,27 @@ class Stardate():
 
     def toTngStardate(self, S = 0, F =0):
         diff = S - tngepoch
-        # 1 issue is 86400*146097/4 seconds long, which just fits in 32 bits. 
+        # 1 issue is 86400*146097/4 seconds long, which just fits in 32 bits.
         nissue = 21 + diff/((86400/4)*146097)
         nsecs = diff % ((86400/4)*146097)
-        # 1 unit is (86400*146097/4)/100000 seconds, which isn't even. 
-        # It cancels to 27*146097/125.  For a six-figure fraction,     
+        # 1 unit is (86400*146097/4)/100000 seconds, which isn't even.
+        # It cancels to 27*146097/125.  For a six-figure fraction,
         # divide that by 1000000.
         h = nsecs * 125000000
         l = F * 125000000
         h = h + ((l >> 32) & 0xffffffff)
         h = h / (27*146097)
         ret = "[%d]%05d" % ( nissue, ((h/1000000) & 0xffffffff) )
-        ret += ".%06d" % (h % 1000000)        
-        return ret;        
+        ret += ".%06d" % (h % 1000000)
+        return ret;
 
-    def getcurdate(self):        
+    def getcurdate(self):
         import datetime
-        # use UTC time for now        
+        # use UTC time for now
         date = datetime.datetime.utcnow().strftime("%Y %m %d %H %M %S")
         utc = [ int(item) for item in date.split() ]
         print "utc array:", utc
-        return utc       
+        return utc
 
     def gregin(self, date=None):
         y, m, d, H, M, S = date
@@ -194,6 +194,6 @@ class Stardate():
 
 if __name__ == "__main__":
     sd = Stardate()
-    date = [2162, 1, 4, 0, 0, 0] #ufepoch
-    date = [2323, 1, 1, 0, 0, 0] #tngepoch
+    #date = [2162, 1, 4, 1, 0, 0] #ufepoch
+    #date = [2323, 1, 1, 0, 0, 0] #tngepoch
     print "%s" % sd.toStardate(date)
