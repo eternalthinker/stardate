@@ -21,7 +21,8 @@
 # Stardate code is based on version 1 of the Stardates in Star Trek FAQ.
 #####################################################################################
 
-import time
+import sys
+import datetime
 
 # The date 0323-01-01 (0323*01*01) is 117609 days after the internal
 # epoch, 0001=01=01 (0000-12-30).  This is a difference of
@@ -148,7 +149,6 @@ class Stardate():
         return ret;
 
     def getcurdate(self):
-        import datetime
         # use UTC time for now
         date = datetime.datetime.utcnow().strftime("%Y %m %d %H %M %S")
         utc = [ int(item) for item in date.split() ]
@@ -194,6 +194,15 @@ class Stardate():
 
 if __name__ == "__main__":
     sd = Stardate()
-    #date = [2162, 1, 4, 1, 0, 0] #ufepoch
-    #date = [2323, 1, 1, 0, 0, 0] #tngepoch
-    print "%s" % sd.toStardate(date)
+
+    if len(sys.argv) > 1:
+        datein = datetime.datetime.strptime(sys.argv[1], "%Y-%m-%d").replace('-', ' ')
+        timein = "0 0 0"
+        if len(sys.argv) > 2:
+            timein = datetime.datetime.strptime(sys.argv[2], "%H-%M-%S").replace(':', ' ')
+        date = [ int(item) for item in (datein + " " + timein).split() ]
+        #date = [2162, 1, 4, 1, 0, 0] #ufepoch
+        #date = [2323, 1, 1, 0, 0, 0] #tngepoch
+        print "%s" % sd.toStardate(date)
+    else:
+        print "%s" % sd.toStardate()
