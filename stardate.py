@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
 # Author: Rahul Anand <et@eternal-thinker.com>
-#         2014-02-21, stardate [-28]( <date> 6.00 pm 30 secs)
+#         2014-02-21, stardate [-28]9946.35
 #
 # Description:
 #   Convert date formats to Stardates
@@ -164,7 +164,6 @@ class Stardate():
         # use UTC time for now
         date = datetime.datetime.utcnow().strftime("%Y %m %d %H %M %S")
         utc = [ int(item) for item in date.split() ]
-        print "utc array:", utc
         return utc
 
     def gregin(self, date=None):
@@ -208,13 +207,19 @@ if __name__ == "__main__":
     sd = Stardate()
 
     if len(sys.argv) > 1:
-        datein = datetime.datetime.strptime(sys.argv[1], "%Y-%m-%d").replace('-', ' ')
-        timein = "0 0 0"
+        datein = datetime.datetime.strptime(sys.argv[1], "%Y-%m-%d")
         if len(sys.argv) > 2:
-            timein = datetime.datetime.strptime(sys.argv[2], "%H-%M-%S").replace(':', ' ')
-        date = [ int(item) for item in (datein + " " + timein).split() ]
+            datein = datetime.datetime.strptime(sys.argv[1] + " " + sys.argv[2], "%Y-%m-%d %H:%M:%S")
+        datestr = str(datein).replace(':', ' ').replace('-', ' ')
+        date = [ int(item) for item in datestr.split() ]
         #date = [2162, 1, 4, 1, 0, 0] #ufepoch
         #date = [2323, 1, 1, 0, 0, 0] #tngepoch
         print "%s" % sd.toStardate(date)
     else:
         print "%s" % sd.toStardate()
+
+    import time
+    while True:
+        print sd.toStardate()
+        time.sleep(1)
+
