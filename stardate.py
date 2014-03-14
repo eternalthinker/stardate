@@ -1,13 +1,25 @@
 #!/usr/bin/env python
 #
 # Author: Rahul Anand <et@eternal-thinker.com>
-#         2014-02-21, stardate[-28]( <date> 6.00 pm 30 secs)
+#         2014-02-21, stardate [-28]( <date> 6.00 pm 30 secs)
 #
 # Description:
 #   Convert date formats to Stardates
 #   Uses Stardate versions in Star Trek FAQ, as adopted by Google Calender
 #
 # Python version: 2.7
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #####################################################################################
 #
 # Based on the following work:
