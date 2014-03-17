@@ -211,6 +211,7 @@ class Stardate():
         sd = stardate.split(']')
         nissue = int(sd[0].lstrip('['))
         isneg = nissue < 0
+        nissue = abs(nissue)
 
         sd = sd[1].split('.')
         integer = int(sd[0])
@@ -220,10 +221,11 @@ class Stardate():
             print "Integer part is out of range"
             return
 
+        frac = 0
         if len(sd) > 1:
             frac = int(sd[1])
 
-        if isneg or nissue < twenty:
+        if isneg or nissue <= twenty:
             # Pre-TNG stardate
             if not isneg:
                 # There are two changes in stardate rate to handle:
@@ -261,7 +263,7 @@ class Stardate():
                 # Negative stardate.  In order to avoid underflow in some cases, we
                 # actually calculate a date one issue (2000 days) too late, and
                 # then subtract that much as the last stage.
-                S = ufpepoch - (nissue - 1) * 2000 * 86400
+                S = ufpepoch - (nissue - 1) * 2000 * dayseconds
 
             S = S + (86400/5) * integer
 
@@ -364,17 +366,20 @@ if __name__ == "__main__":
     sd = Stardate()
 
     if len(sys.argv) > 1:
-        datein = datetime.datetime.strptime(sys.argv[1], "%Y-%m-%d")
-        if len(sys.argv) > 2:
-            datein = datetime.datetime.strptime(sys.argv[1] + " " + sys.argv[2], "%Y-%m-%d %H:%M:%S")
-        datestr = str(datein).replace(':', ' ').replace('-', ' ')
-        date = [ int(item) for item in datestr.split() ]
-        #date = [2162, 1, 4, 1, 0, 0] #ufepoch
-        #date = [2323, 1, 1, 0, 0, 0] #tngepoch
-        print "%s" % sd.toStardate(date)
+        if sys.argv[1].startswith('['):
+            print sd.fromStardate(sys.argv[1])
+        else:
+            datein = datetime.datetime.strptime(sys.argv[1], "%Y-%m-%d")
+            if len(sys.argv) > 2:
+                datein = datetime.datetime.strptime\
+                  (sys.argv[1] + " " + sys.argv[2], "%Y-%m-%d %H:%M:%S")
+            datestr = str(datein).replace(':', ' ').replace('-', ' ')
+            date = [ int(item) for item in datestr.split() ]
+            #date = [2162, 1, 4, 1, 0, 0] #ufepoch
+            #date = [2323, 1, 1, 0, 0, 0] #tngepoch
+            print sd.toStardate(date)
     else:
-        print "%s" % sd.toStardate()
-        print "%s" % sd.fromStardate('[0]0000.00')
+        print sd.toStardate()
 
     # import time
     # while True:
