@@ -223,7 +223,7 @@ class Stardate():
 
         frac = 0
         if len(sd) > 1:
-            frac = int(sd[1])
+            frac = int( sd[1] + '0'*(6 - len(sd[1])) )
 
         if isneg or nissue <= twenty:
             # Pre-TNG stardate
