@@ -209,8 +209,8 @@ class Stardate():
             print "Incorrect stardate format"
             return
         sd = stardate.split(']')
-        nissue = int(sd[0].lstrip('['))   
-        isneg = nissue < 0             
+        nissue = int(sd[0].lstrip('['))
+        isneg = nissue < 0
 
         sd = sd[1].split('.')
         integer = int(sd[0])
@@ -226,51 +226,51 @@ class Stardate():
         if isneg or nissue < twenty:
             # Pre-TNG stardate
             if not isneg:
-                # There are two changes in stardate rate to handle: 
-                #      up to [19]7340      0.2 days/unit           
-                # [19]7340 to [19]7840     10   days/unit           
-                # [19]7840 to [20]5006      2   days/unit           
-                # we scale to the first of these. 
- 
+                # There are two changes in stardate rate to handle:
+                #      up to [19]7340      0.2 days/unit
+                # [19]7340 to [19]7840     10   days/unit
+                # [19]7840 to [20]5006      2   days/unit
+                # we scale to the first of these.
+
                 fiddle = False
                 if nissue == twenty:
                     nissue = nineteen
-                    integer += 10000  
-                    fiddle = True  
+                    integer += 10000
+                    fiddle = True
                 elif nissue == nineteen and integer >= 7340:
                     fiddle = True
 
                 if fiddle:
-                    # We have a stardate in the range [19]7340 to [19]15006.  First 
-                    # we scale it to match the prior rate, so this range changes to 
+                    # We have a stardate in the range [19]7340 to [19]15006.  First
+                    # we scale it to match the prior rate, so this range changes to
                     # 7340 to 390640.
                     integer = 7340 + ((integer - 7340) * 50) + frac / (1000000/50)
                     frac = (frac * 50) % 1000000
 
-                    # Next, if the stardate is greater than what was originally     
-                    # [19]7840 (now represented as 32340), it is in the 2 days/unit 
-                    # range, so scale it back again.  The range affected, 32340 to  
-                    # 390640, changes to 32340 to 104000.               
+                    # Next, if the stardate is greater than what was originally
+                    # [19]7840 (now represented as 32340), it is in the 2 days/unit
+                    # range, so scale it back again.  The range affected, 32340 to
+                    # 390640, changes to 32340 to 104000.
                     if integer >= 32340:
                         frac = frac/5 + (integer%5) * (1000000/5)
                         integer = 32340 + (integer - 32340) / 5
-                    
+
                 S = ufpepoch + nissue * 2000 * 86400
 
             else:
-                # Negative stardate.  In order to avoid underflow in some cases, we 
-                # actually calculate a date one issue (2000 days) too late, and     
+                # Negative stardate.  In order to avoid underflow in some cases, we
+                # actually calculate a date one issue (2000 days) too late, and
                 # then subtract that much as the last stage.
                 S = ufpepoch - (nissue - 1) * 2000 * 86400
 
             S = S + (86400/5) * integer
 
-            # frac is scaled such that it is in the range 0-999999, and a value 
-            # of 1000000 would represent 86400/5 seconds.  We want to put frac  
-            # in the top half of a uint64, multiply by 86400/5 and divide by    
-            # 1000000, in order to leave the uint64 containing (top half) a     
-            # number of seconds and (bottom half) a fraction.  In order to      
-            # avoid overflow, this scaling is cancelled down to a multiply by   
+            # frac is scaled such that it is in the range 0-999999, and a value
+            # of 1000000 would represent 86400/5 seconds.  We want to put frac
+            # in the top half of a uint64, multiply by 86400/5 and divide by
+            # 1000000, in order to leave the uint64 containing (top half) a
+            # number of seconds and (bottom half) a fraction.  In order to
+            # avoid overflow, this scaling is cancelled down to a multiply by
             #  54 and a divide by 3125.
             f = (frac << 32) * 54
             f = (f + 3124) / 3125
@@ -280,21 +280,21 @@ class Stardate():
             if isneg:
                 # Subtract off the issue that was added above.
                 S = S - 2000*86400
-        
+
         else:
             # TNG stardate
             nissue = nissue - 21
 
-            # Each issue is 86400*146097/4 seconds long. 
+            # Each issue is 86400*146097/4 seconds long.
             S = tngepoch + nissue * (86400/4)*146097
 
-            # 1 unit is (86400*146097/4)/100000 seconds, which isn't even. 
+            # 1 unit is (86400*146097/4)/100000 seconds, which isn't even.
             # It cancels to 27146097/125.
             t = integer * 1000000
             t = t + frac
             t = t * 27 * 146097
             S = S + t / 125000000
-            
+
             t = (t % 125000000) << 32
             t = (t + 124999999) / 125000000
             F = t & 0xffffffff
@@ -306,40 +306,40 @@ class Stardate():
         tod = S % dayseconds
         days = S / dayseconds
 
-        # We need the days number to be days since an xx01.01.01 to get the 
-        # leap year cycle right.  For the Julian calendar, it is already    
-        # so (0001=01=01).  But for the Gregorian calendar, the epoch is    
-        # 0000-12-30, so we must add on 400 years minus 2 days.  The year   
-        # number gets corrected below. 
+        # We need the days number to be days since an xx01.01.01 to get the
+        # leap year cycle right.  For the Julian calendar, it is already
+        # so (0001=01=01).  But for the Gregorian calendar, the epoch is
+        # 0000-12-30, so we must add on 400 years minus 2 days.  The year
+        # number gets corrected below.
         days = days + 146095
 
-        # Approximate the year number, underestimating but only by a limited 
-        # amount.  days/366 is a first approximation, but it goes out by 1   
-        # day every non-leap year, and so will be a full year out after 366  
-        # non-leap years.  In the Julian calendar, we get 366 non-leap years 
-        # every 488 years, so adding (days/366)/487 corrects for this.  In   
-        # the Gregorian calendar, it is not so simple: we get 400 years      
-        # every 146097 days, and then add on days/366 within that set of 400 
+        # Approximate the year number, underestimating but only by a limited
+        # amount.  days/366 is a first approximation, but it goes out by 1
+        # day every non-leap year, and so will be a full year out after 366
+        # non-leap years.  In the Julian calendar, we get 366 non-leap years
+        # every 488 years, so adding (days/366)/487 corrects for this.  In
+        # the Gregorian calendar, it is not so simple: we get 400 years
+        # every 146097 days, and then add on days/366 within that set of 400
         # years.
         year = (days/146097)*400 + (days % 146097)/366
-      
-        # We then adjust the number of days remaining to match this 
-        # approximation of the year.  Note that this approximation  
-        # will never be more than two years off the correct date,   
-        # so the number of days left no longer needs to be stored   
-        # in a uint64.        
+
+        # We then adjust the number of days remaining to match this
+        # approximation of the year.  Note that this approximation
+        # will never be more than two years off the correct date,
+        # so the number of days left no longer needs to be stored
+        # in a uint64.
         days = (days + year/100) - (year/400)
         days = days - (year*365 + year/4)
 
-        # Now correct the year to an actual year number (see notes above).      
+        # Now correct the year to an actual year number (see notes above).
         year = year - 399
 
         return self.docalout(year%400, year, days&0xffffffff, tod)
 
 
-    def docalout(self, cycle, year, ndays, tod):        
+    def docalout(self, cycle, year, ndays, tod):
         nmonth = 0
-        # Walk through the months, fixing the year, and as a side effect 
+        # Walk through the months, fixing the year, and as a side effect
         # calculating the month number and day of the month.
         while ndays >= self.xdays(True, cycle)[nmonth]:
             ndays -= self.xdays(True, cycle)[nmonth]
