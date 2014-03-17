@@ -36,6 +36,8 @@
 import sys
 import datetime
 
+dayseconds = 86400
+
 # The date 0323-01-01 (0323*01*01) is 117609 days after the internal
 # epoch, 0001=01=01 (0000-12-30).  This is a difference of
 # 117609*86400 (0x1cb69*0x15180) == 10161417600 (0x25daaed80) seconds.
@@ -144,7 +146,7 @@ class Stardate():
         ret += "." + str(frac)
         return ret
 
-    def toTngStardate(self, S = 0, F =0):
+    def toTngStardate(self, S=0, F=0):
         diff = S - tngepoch
         # 1 issue is 86400*146097/4 seconds long, which just fits in 32 bits.
         nissue = 21 + diff/((86400/4)*146097)
@@ -270,7 +272,7 @@ class Stardate():
             # number of seconds and (bottom half) a fraction.  In order to      
             # avoid overflow, this scaling is cancelled down to a multiply by   
             #  54 and a divide by 3125.
-            f = frac * 54
+            f = (frac << 32) * 54
             f = (f + 3124) / 3125
             S = S + ((f >> 32) & 0xffffffff)
             F = f & 0xffffffff
@@ -286,18 +288,76 @@ class Stardate():
             # Each issue is 86400*146097/4 seconds long. 
             S = tngepoch + nissue * (86400/4)*146097
 
-            # 1 unit is (86400146097/4)/100000 seconds, which isn't even. 
+            # 1 unit is (86400*146097/4)/100000 seconds, which isn't even. 
             # It cancels to 27146097/125.
             t = integer * 1000000
             t = t + frac
             t = t * 27 * 146097
             S = S + t / 125000000
             
-            t = t % 125000000
+            t = (t % 125000000) << 32
             t = (t + 124999999) / 125000000
             F = t & 0xffffffff
 
-        print S, F
+        return self.calout(S, F)
+
+
+    def calout(self, S=0, F=0):
+        tod = S % dayseconds
+        days = S / dayseconds
+
+        # We need the days number to be days since an xx01.01.01 to get the 
+        # leap year cycle right.  For the Julian calendar, it is already    
+        # so (0001=01=01).  But for the Gregorian calendar, the epoch is    
+        # 0000-12-30, so we must add on 400 years minus 2 days.  The year   
+        # number gets corrected below. 
+        days = days + 146095
+
+        # Approximate the year number, underestimating but only by a limited 
+        # amount.  days/366 is a first approximation, but it goes out by 1   
+        # day every non-leap year, and so will be a full year out after 366  
+        # non-leap years.  In the Julian calendar, we get 366 non-leap years 
+        # every 488 years, so adding (days/366)/487 corrects for this.  In   
+        # the Gregorian calendar, it is not so simple: we get 400 years      
+        # every 146097 days, and then add on days/366 within that set of 400 
+        # years.
+        year = (days/146097)*400 + (days % 146097)/366
+      
+        # We then adjust the number of days remaining to match this 
+        # approximation of the year.  Note that this approximation  
+        # will never be more than two years off the correct date,   
+        # so the number of days left no longer needs to be stored   
+        # in a uint64.        
+        days = (days + year/100) - (year/400)
+        days = days - (year*365 + year/4)
+
+        # Now correct the year to an actual year number (see notes above).      
+        year = year - 399
+
+        return self.docalout(year%400, year, days&0xffffffff, tod)
+
+
+    def docalout(self, cycle, year, ndays, tod):        
+        nmonth = 0
+        # Walk through the months, fixing the year, and as a side effect 
+        # calculating the month number and day of the month.
+        while ndays >= self.xdays(True, cycle)[nmonth]:
+            ndays -= self.xdays(True, cycle)[nmonth]
+            nmonth += 1
+            if nmonth == 12:
+                nmonth = 0
+                year += 1
+                cycle += 1
+
+        ndays += 1
+        nmonth += 1
+        # Now sort out the time of day.
+        hr = tod / 3600
+        tod %= 3600
+        minut = tod / 60
+        sec = tod % 60
+
+        return "%d-%02d-%02d %d:%d:%d" % (year, nmonth, ndays, hr, minut, sec)
 
 
 if __name__ == "__main__":
