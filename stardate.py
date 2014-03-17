@@ -199,8 +199,105 @@ class Stardate():
 
 
     def fromStardate(self, stardate):
-        nineteen = [0, 19];
-        twenty = [0, 20];
+        nineteen = 19
+        twenty = 20
+        S, F = 0, 0
+
+        if not stardate.startswith('['):
+            print "Incorrect stardate format"
+            return
+        sd = stardate.split(']')
+        nissue = int(sd[0].lstrip('['))   
+        isneg = nissue < 0             
+
+        sd = sd[1].split('.')
+        integer = int(sd[0])
+        if (integer > 99999) or \
+           (not isneg and nissue == twenty and integer > 5005) or \
+           ((isneg or nissue < twenty) and integer > 9999):
+            print "Integer part is out of range"
+            return
+
+        if len(sd) > 1:
+            frac = int(sd[1])
+
+        if isneg or nissue < twenty:
+            # Pre-TNG stardate
+            if not isneg:
+                # There are two changes in stardate rate to handle: 
+                #      up to [19]7340      0.2 days/unit           
+                # [19]7340 to [19]7840     10   days/unit           
+                # [19]7840 to [20]5006      2   days/unit           
+                # we scale to the first of these. 
+ 
+                fiddle = False
+                if nissue == twenty:
+                    nissue = nineteen
+                    integer += 10000  
+                    fiddle = True  
+                elif nissue == nineteen and integer >= 7340:
+                    fiddle = True
+
+                if fiddle:
+                    # We have a stardate in the range [19]7340 to [19]15006.  First 
+                    # we scale it to match the prior rate, so this range changes to 
+                    # 7340 to 390640.
+                    integer = 7340 + ((integer - 7340) * 50) + frac / (1000000/50)
+                    frac = (frac * 50) % 1000000
+
+                    # Next, if the stardate is greater than what was originally     
+                    # [19]7840 (now represented as 32340), it is in the 2 days/unit 
+                    # range, so scale it back again.  The range affected, 32340 to  
+                    # 390640, changes to 32340 to 104000.               
+                    if integer >= 32340:
+                        frac = frac/5 + (integer%5) * (1000000/5)
+                        integer = 32340 + (integer - 32340) / 5
+                    
+                S = ufpepoch + nissue * 2000 * 86400
+
+            else:
+                # Negative stardate.  In order to avoid underflow in some cases, we 
+                # actually calculate a date one issue (2000 days) too late, and     
+                # then subtract that much as the last stage.
+                S = ufpepoch - (nissue - 1) * 2000 * 86400
+
+            S = S + (86400/5) * integer
+
+            # frac is scaled such that it is in the range 0-999999, and a value 
+            # of 1000000 would represent 86400/5 seconds.  We want to put frac  
+            # in the top half of a uint64, multiply by 86400/5 and divide by    
+            # 1000000, in order to leave the uint64 containing (top half) a     
+            # number of seconds and (bottom half) a fraction.  In order to      
+            # avoid overflow, this scaling is cancelled down to a multiply by   
+            #  54 and a divide by 3125.
+            f = frac * 54
+            f = (f + 3124) / 3125
+            S = S + ((f >> 32) & 0xffffffff)
+            F = f & 0xffffffff
+
+            if isneg:
+                # Subtract off the issue that was added above.
+                S = S - 2000*86400
+        
+        else:
+            # TNG stardate
+            nissue = nissue - 21
+
+            # Each issue is 86400*146097/4 seconds long. 
+            S = tngepoch + nissue * (86400/4)*146097
+
+            # 1 unit is (86400146097/4)/100000 seconds, which isn't even. 
+            # It cancels to 27146097/125.
+            t = integer * 1000000
+            t = t + frac
+            t = t * 27 * 146097
+            S = S + t / 125000000
+            
+            t = t % 125000000
+            t = (t + 124999999) / 125000000
+            F = t & 0xffffffff
+
+        print S, F
 
 
 if __name__ == "__main__":
@@ -217,9 +314,10 @@ if __name__ == "__main__":
         print "%s" % sd.toStardate(date)
     else:
         print "%s" % sd.toStardate()
+        print "%s" % sd.fromStardate('[0]0000.00')
 
-    import time
-    while True:
-        print sd.toStardate()
-        time.sleep(1)
+    # import time
+    # while True:
+    #     print sd.toStardate()
+    #     time.sleep(1)
 

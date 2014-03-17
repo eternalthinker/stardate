@@ -149,7 +149,7 @@ static struct format {
   { 0, 0, NULL, NULL }
 };
 
-static uint16 sddigits = 6;
+static uint16 sddigits = 2;
 
 static char const *progname;
 
@@ -214,7 +214,6 @@ static void getcurdate(intdate *dt)
   char utc[20];
   sprintf(utc, "%04d-%02d-%02dT%02d:%02d:%02d", tm->tm_year+1900, tm->tm_mon+1,
       tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
-  printf("utc array: %s\n", utc);  
   gregin(utc, dt);
 }
 
