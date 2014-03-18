@@ -7,19 +7,36 @@ Provides conversion from Gregarian calender dates to Stardates and vice versa
 
 Using in python code:
 ---------------------
-`from stardate import Stardate`
+```python
+from stardate import Stardate  
+sd = new Stardate()  
+sd.toStardate()
+```  
+_methods:_
+* `toStardate(date=None)`  
+Provide date as list [yyyy, mm, dd, HH, MM, SS]. Default action if no date is provided is to process current local time
 
-methods:
-  * `toStardate([date])`  
-      provide date as list [yyyy, mm, dd, HH, MM, SS]
-      default action is to process current local time
+* `fromStardate(stardate)`   
+Provide stardate as string "[ii]nnnn.ffffff"
+  
 
-  * `fromStardate(stardate)`  
-      provide stardate as string "[(-)ii]nnnn.ffffff"
 
 
 Using in commandline:
 ---------------------
-`python stardate.py yyyy-mm-dd (HH:MM:SS:)`  
-`python stardate.py [(-)ii]nnnn.ffffff`  
+```python
+python stardate.py yyyy-mm-dd HH:MM:SS  
+  
+python stardate.py 2014-3-1 12:30:35
+python stardate.py 2060-01-01
+```  
+
+```python
+python stardate.py [ii]nnnn.ffffff  
+  
+python stardate.py [0]000.00  
+python stardate.py [-27]1234.123456  
+python stardate.py [19]1234.12  
+python stardate.py [-27]1234  
+```  
 
