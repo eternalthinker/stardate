@@ -10,15 +10,16 @@ Using in python code:
 `from stardate import Stardate`
 
 methods:
-  * `toStardate([date])` 
+  * `toStardate([date])`  
       provide date as list [yyyy, mm, dd, HH, MM, SS]
       default action is to process current local time
 
-  * `fromStardate(stardate)` 
+  * `fromStardate(stardate)`  
       provide stardate as string "[(-)ii]nnnn.ffffff"
 
 
 Using in commandline:
 ---------------------
-`python stardate.py yyyy-mm-dd (HH:MM:SS:)` 
-`python stardate.py [(-)ii]nnnn.ffffff`
+`python stardate.py yyyy-mm-dd (HH:MM:SS:)`  
+`python stardate.py [(-)ii]nnnn.ffffff`  
+
