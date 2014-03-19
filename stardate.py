@@ -35,8 +35,11 @@
 
 import sys
 import datetime
+import re
 
 dayseconds = 86400
+sdreg = re.compile(r"^\[(-{0,1}\d+)\](\d+)\.{1}(\d+)$")
+datetimereg = re.compile(r"^(\d{4})-(\d{1,2})-(\d{1,2}) (\d{1,2}):(\d{1,2}):(\d{1,2})$") 
 
 # The date 0323-01-01 (0323*01*01) is 117609 days after the internal
 # epoch, 0001=01=01 (0000-12-30).  This is a difference of
@@ -92,10 +95,11 @@ class Stardate():
         pass
 
     def toStardate(self, date=None):
-        S = 0
-        F = 0
+        S, F = 0, 0
         if not date:
             date = self.getcurdate()
+        date = list(re.findall(datetimereg, date)[0])
+        date = [int(i) for i in date]
         S = self.gregin(date)
 
         isneg = True
@@ -163,10 +167,7 @@ class Stardate():
         return ret;
 
     def getcurdate(self):
-        # use UTC time for now
-        date = datetime.datetime.utcnow().strftime("%Y %m %d %H %M %S")
-        utc = [ int(item) for item in date.split() ]
-        return utc
+       return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     def gregin(self, date=None):
         y, m, d, H, M, S = date
@@ -203,28 +204,25 @@ class Stardate():
     def fromStardate(self, stardate):
         nineteen = 19
         twenty = 20
-        S, F = 0, 0
+        S, F = 0, 0  
 
-        if not stardate.startswith('['):
-            print "Incorrect stardate format"
+        sd = re.findall(sdreg, stardate)
+        if not len(sd):
+            print "Invalid stardate format"
             return
-        sd = stardate.split(']')
-        nissue = int(sd[0].lstrip('['))
+        sd = sd[0]
+        nissue = int(sd[0])
         isneg = nissue < 0
         nissue = abs(nissue)
+        integer = int(sd[1])
+        frac = int( sd[2] + '0'*(6 - len(sd[2])) )
 
-        sd = sd[1].split('.')
-        integer = int(sd[0])
         if (integer > 99999) or \
            (not isneg and nissue == twenty and integer > 5005) or \
            ((isneg or nissue < twenty) and integer > 9999):
             print "Integer part is out of range"
             return
-
-        frac = 0
-        if len(sd) > 1:
-            frac = int( sd[1] + '0'*(6 - len(sd[1])) )
-
+        
         if isneg or nissue <= twenty:
             # Pre-TNG stardate
             if not isneg:
@@ -369,15 +367,13 @@ if __name__ == "__main__":
         if sys.argv[1].startswith('['):
             print sd.fromStardate(sys.argv[1])
         else:
-            datein = datetime.datetime.strptime(sys.argv[1], "%Y-%m-%d")
+            dt = sys.argv[1]
             if len(sys.argv) > 2:
-                datein = datetime.datetime.strptime\
-                  (sys.argv[1] + " " + sys.argv[2], "%Y-%m-%d %H:%M:%S")
-            datestr = str(datein).replace(':', ' ').replace('-', ' ')
-            date = [ int(item) for item in datestr.split() ]
-            #date = [2162, 1, 4, 1, 0, 0] #ufepoch
-            #date = [2323, 1, 1, 0, 0, 0] #tngepoch
-            print sd.toStardate(date)
+                dt += " " + sys.argv[2]
+            else:
+                dt += " 0:0:0"
+            date = datetime.datetime.strptime(dt, "%Y-%m-%d %H:%M:%S") # Validating date ranges            
+            print sd.toStardate(dt)
     else:
         print sd.toStardate()
 

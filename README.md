@@ -14,7 +14,7 @@ sd.toStardate()
 ```  
 _methods:_
 * `toStardate(date=None)`  
-Provide date as list [yyyy, mm, dd, HH, MM, SS]. Default action if no date is provided is to process current local time
+Provide date as string "yyyy-mm-dd HH:MM:SS". Default action if no date is provided is to process current local time
 
 * `fromStardate(stardate)`   
 Provide stardate as string "[ii]nnnn.ffffff"
