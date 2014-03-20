@@ -41,21 +41,6 @@ dayseconds = 86400
 sdreg = re.compile(r"^\[(-{0,1}\d+)\](\d+)\.{1}(\d+)$")
 datetimereg = re.compile(r"^(\d{4})-(\d{1,2})-(\d{1,2}) (\d{1,2}):(\d{1,2}):(\d{1,2})$") 
 
-# The date 0323-01-01 (0323*01*01) is 117609 days after the internal
-# epoch, 0001=01=01 (0000-12-30).  This is a difference of
-# 117609*86400 (0x1cb69*0x15180) == 10161417600 (0x25daaed80) seconds.
-qcepoch = 0x25daaed80
-
-# The length of four centuries, 146097 days of 86400 seconds, is
-# 12622780800 (0x2f0605980) seconds.
-quadcent = 0x2f0605980
-
-# The epoch for Unix time, 1970-01-01, is 719164 (0xaf93c) days after
-# our internal epoch, 0001=01=01 (0000-12-30).  This is a difference
-# of 719164*86400 (0xaf93c*0x15180) == 62135769600 (0xe77949a00)
-# seconds.
-unixepoch = 0xe77949a00
-
 # The epoch for stardates, 2162-01-04, is 789294 (0xc0b2e) days after
 # the internal epoch.  This is 789294*86400 (0xc0b2e*0x15180) ==
 # 68195001600 (0xfe0bd2500) seconds.
@@ -66,30 +51,16 @@ ufpepoch = 0xfe0bd2500
 # seconds.
 tngepoch = 0x110f8cad00
 
-class Stardate():
-
-    # The length of one quadcent year, 12622780800 / 400 == 31556952 seconds.
-    QCYEAR = 31556952
-    STDYEAR = 31536000
-
+class Stardate():    
     # Definitions to help with leap years.
     nrmdays = [ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 ]
     lyrdays = [ 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 ]
-
-    def jleapyear(self, y):
-        return not y % 4
-
+    
     def gleapyear(self, y):
         return (not y % 4) and (y % 100 or not y % 400)
-
-    def jdays(self, y):
-        return self.lyrdays if self.jleapyear(y) else self.nrmdays
-
+    
     def gdays(self, y):
         return self.lyrdays if self.gleapyear(y) else self.nrmdays
-
-    def xdays(self, gp, y):
-        return self.lyrdays if (self.gleapyear(y) if gp else self.jleapyear(y)) else self.nrmdays
 
     def __init__(self):
         pass
@@ -111,39 +82,39 @@ class Stardate():
         if S < ufpepoch:
             # negative stardate
             diff = ufpepoch - S
-            nsecs = 2000*86400 - 1 - (diff % (2000 * 86400))
+            nsecs = 2000*dayseconds - 1 - (diff % (2000 * dayseconds))
             isneg = True
-            nissue = 1 + ((diff / (2000 * 86400)) & 0xffffffff)
-            integer = nsecs / (86400/5)
-            frac = ( ((nsecs % (86400/5)) << 32) | F ) * 50
+            nissue = 1 + ((diff / (2000 * dayseconds)) & 0xffffffff)
+            integer = nsecs / (dayseconds/5)
+            frac = ( ((nsecs % (dayseconds/5)) << 32) | F ) * 50
         elif S < tngepoch:
             # positive stardate
             diff = S - ufpepoch
-            nsecs = diff % (2000 * 86400)
+            nsecs = diff % (2000 * dayseconds)
             isneg = False
-            nissue = (diff / (2000 * 86400)) & 0xffffffff
+            nissue = (diff / (2000 * dayseconds)) & 0xffffffff
 
-            if nissue < 19 or ( nissue == 19 and nsecs < (7340*(86400/5)) ) :
+            if nissue < 19 or ( nissue == 19 and nsecs < (7340*(dayseconds/5)) ) :
                 # TOS era
-                integer = nsecs / (86400/5)
-                frac = ( ((nsecs % (86400/5)) << 32) | F ) * 50
+                integer = nsecs / (dayseconds/5)
+                frac = ( ((nsecs % (dayseconds/5)) << 32) | F ) * 50
             else:
                 # film era
-                nsecs += (nissue - 19) * 2000 * 86400
+                nsecs += (nissue - 19) * 2000 * dayseconds
                 nissue = 19
-                nsecs -= 7340 * (86400/5)
-                if nsecs >= 5000*86400:
+                nsecs -= 7340 * (dayseconds/5)
+                if nsecs >= 5000*dayseconds:
                     # late film era
-                    nsecs -= 5000 * 86400
-                    integer = 7840 + nsecs / (86400*2)
+                    nsecs -= 5000 * dayseconds
+                    integer = 7840 + nsecs / (dayseconds*2)
                     if integer >= 10000:
                         integer -= 10000
                         nissue += 1
-                    frac = ( ((nsecs % (86400*2)) << 32) | F ) * 5
+                    frac = ( ((nsecs % (dayseconds*2)) << 32) | F ) * 5
                 else:
                     # early film era
-                    integer = 7340 + nsecs / (86400*10)
-                    frac = ( ((nsecs % (86400*10)) << 32) | F )
+                    integer = 7340 + nsecs / (dayseconds*10)
+                    frac = ( ((nsecs % (dayseconds*10)) << 32) | F )
 
         ret = "[" + ("-" if isneg else "")  + str(nissue) + "]" + str(integer).zfill(4)
         frac = ( ( ((frac * 125) / 108) >> 32 ) & 0xffffffff ) # round
@@ -153,8 +124,8 @@ class Stardate():
     def toTngStardate(self, S=0, F=0):
         diff = S - tngepoch
         # 1 issue is 86400*146097/4 seconds long, which just fits in 32 bits.
-        nissue = 21 + diff/((86400/4)*146097)
-        nsecs = diff % ((86400/4)*146097)
+        nissue = 21 + diff/((dayseconds/4)*146097)
+        nsecs = diff % ((dayseconds/4)*146097)
         # 1 unit is (86400*146097/4)/100000 seconds, which isn't even.
         # It cancels to 27*146097/125.  For a six-figure fraction,
         # divide that by 1000000.
@@ -188,13 +159,13 @@ class Stardate():
         n = 2 + d - 1
         m -= 1
         while m > 0:
-            n += self.xdays(True, cycle)[m]
+            n += self.gdays(cycle)[m]
             m -= 1
 
         t = t + n
         if low:
             t = t - 146097
-        t = t * 86400
+        t = t * dayseconds
 
         retS = t + H*3600 + M*60 + S
 
@@ -255,7 +226,7 @@ class Stardate():
                         frac = frac/5 + (integer%5) * (1000000/5)
                         integer = 32340 + (integer - 32340) / 5
 
-                S = ufpepoch + nissue * 2000 * 86400
+                S = ufpepoch + nissue * 2000 * dayseconds
 
             else:
                 # Negative stardate.  In order to avoid underflow in some cases, we
@@ -263,7 +234,7 @@ class Stardate():
                 # then subtract that much as the last stage.
                 S = ufpepoch - (nissue - 1) * 2000 * dayseconds
 
-            S = S + (86400/5) * integer
+            S = S + (dayseconds/5) * integer
 
             # frac is scaled such that it is in the range 0-999999, and a value
             # of 1000000 would represent 86400/5 seconds.  We want to put frac
@@ -279,14 +250,14 @@ class Stardate():
 
             if isneg:
                 # Subtract off the issue that was added above.
-                S = S - 2000*86400
+                S = S - 2000*dayseconds
 
         else:
             # TNG stardate
             nissue = nissue - 21
 
             # Each issue is 86400*146097/4 seconds long.
-            S = tngepoch + nissue * (86400/4)*146097
+            S = tngepoch + nissue * (dayseconds/4)*146097
 
             # 1 unit is (86400*146097/4)/100000 seconds, which isn't even.
             # It cancels to 27146097/125.
@@ -341,8 +312,8 @@ class Stardate():
         nmonth = 0
         # Walk through the months, fixing the year, and as a side effect
         # calculating the month number and day of the month.
-        while ndays >= self.xdays(True, cycle)[nmonth]:
-            ndays -= self.xdays(True, cycle)[nmonth]
+        while ndays >= self.gdays(cycle)[nmonth]:
+            ndays -= self.gdays(cycle)[nmonth]
             nmonth += 1
             if nmonth == 12:
                 nmonth = 0
